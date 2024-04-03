@@ -1,6 +1,6 @@
 # [图解操作系统](https://www.xiaolincoding.com/os/)
 
-## 1. 硬件结构
+## [1. 硬件结构](https://github.com/niu0217/EightPartEssay/tree/main/XiaoLin/GraphicalSystem/HardwareStructure)
 
 ## 2. 操作系统结构
 
