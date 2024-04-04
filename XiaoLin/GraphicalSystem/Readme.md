@@ -4,7 +4,7 @@
 
 ## 2. 操作系统结构
 
-## 3. 内存管理
+## [3. 内存管理](https://github.com/niu0217/EightPartEssay/tree/main/XiaoLin/GraphicalSystem/MemoryManagement)
 
 ## 4. 进程管理
 
