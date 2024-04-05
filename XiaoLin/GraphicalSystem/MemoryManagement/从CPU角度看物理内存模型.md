@@ -17,7 +17,7 @@
 
 由于这块物理内存是连续的，物理地址也是连续的，划分出来的这一页一页的物理页必然也是连续的，并且每页的大小都是固定的，所以我们很容易想到用一个数组来组织这些连续的物理内存页 struct page 结构，其在数组中对应的下标即为 PFN 。这种内存模型就叫做平坦内存模型 FLATMEM 。
 
-![内存模型1](从 CPU 角度看物理内存模型.assets/内存模型1.png)  
+![内存模型1](从CPU角度看物理内存模型.assets/内存模型1.png)  
 
 内核中使用了一个 mem_map 的全局数组用来组织所有划分出来的物理内存页。mem_map 全局数组的下标就是相应物理页对应的 PFN.
 
@@ -46,13 +46,13 @@ FLATMEM 平坦内存模型只适合管理一整块连续的物理内存，而对
 
 而每个 struct page 结构大部分情况下需要占用 40 字节（struct page 结构在不同场景下内存占用会有所不同，这一点我们后面再说），如果物理内存中存在的大块的地址空洞，那么为这些空洞而分配的 struct page 将会占用大量的内存空间，导致巨大的浪费。
 
-![image.png](从 CPU 角度看物理内存模型.assets/e29eec09835747396b91ee363cd8b697.png) 
+![image.png](从CPU角度看物理内存模型.assets/e29eec09835747396b91ee363cd8b697.png) 
 
 为了组织和管理这些不连续的物理内存，内核于是引入了 DISCONTIGMEM 非连续内存模型，用来消除这些不连续的内存地址空洞对 mem_map 的空间浪费。
 
 在 DISCONTIGMEM 非连续内存模型中，内核将物理内存从宏观上划分成了一个一个的节点 node （微观上还是一页一页的物理页），每个 node 节点管理一块连续的物理内存。这样一来这些连续的物理内存页均被划归到了对应的 node 节点中管理，就避免了内存空洞造成的空间浪费。
 
-![image.png](从 CPU 角度看物理内存模型.assets/ae106d5d780328aae34d40560dc0442f.png) 
+![image.png](从CPU角度看物理内存模型.assets/ae106d5d780328aae34d40560dc0442f.png) 
 
 内核中使用 struct pglist_data 表示用于管理连续物理内存的 node 节点（内核假设 node 中的物理内存是连续的），既然每个 node 节点中的物理内存是连续的，于是在每个 node 节点中还是采用 FLATMEM 平坦内存模型的方式来组织管理物理内存页。每个 node 节点中包含一个 `struct page *node_mem_map` 数组，用来组织管理 node 中的连续物理内存页。
 
@@ -94,7 +94,7 @@ typedef struct pglist_data {
 
 随着内存技术的发展，内核可以支持物理内存的热插拔了（后面我会介绍），这样一来物理内存的不连续就变为常态了，在上小节介绍的 DISCONTIGMEM 内存模型中，其实每个 node 中的物理内存也不一定都是连续的。
 
-![image.png](从 CPU 角度看物理内存模型.assets/071573961065779baa2dcbb72bd8246a.png) 
+![image.png](从CPU角度看物理内存模型.assets/071573961065779baa2dcbb72bd8246a.png) 
 
 而且每个 node 中都有一套完整的内存管理系统，如果 node 数目多的话，那这个开销就大了，于是就有了对连续物理内存更细粒度的管理需求，为了能够更灵活地管理粒度更小的连续物理内存，SPARSEMEM 稀疏内存模型就此登场了。
 
@@ -118,7 +118,7 @@ SPARSEMEM 内存模型中的这些所有的 mem_section 会被存放在一个全
 extern struct mem_section *mem_section[NR_SECTION_ROOTS];
 ```
 
-![image.png](从 CPU 角度看物理内存模型.assets/e3956ea9e4dab708d57c7c183c6b91d6.png) 
+![image.png](从CPU角度看物理内存模型.assets/e3956ea9e4dab708d57c7c183c6b91d6.png) 
 
 在 SPARSEMEM 稀疏内存模型下 page_to_pfn 与 pfn_to_page 的计算逻辑又发生了变化。
 
@@ -173,13 +173,13 @@ extern struct mem_section *mem_section[NR_SECTION_ROOTS];
 
 前边我们介绍 SPARSEMEM 内存模型的时候提到，每个 mem_section 都可以在系统运行时改变 offline ，online 状态，以便支持内存的热插拔（hotplug）功能。 当 mem_section offline 时, 内核会把这部分内存隔离开, 使得该部分内存不可再被使用, 然后再把 mem_section 中已经分配的内存页迁移到其他 mem_section 的内存上. 。
 
-![image.png](从 CPU 角度看物理内存模型.assets/3011fad3b8da8311807d9bc0012a1757.png) 
+![image.png](从CPU角度看物理内存模型.assets/3011fad3b8da8311807d9bc0012a1757.png) 
 
 但是这里会有一个问题，就是并非所有的物理页都可以迁移，因为迁移意味着物理内存地址的变化，而内存的热插拔应该对进程来说是透明的，所以这些迁移后的物理页映射的虚拟内存地址是不能变化的。
 
 这一点在进程的用户空间是没有问题的，因为进程在用户空间访问内存都是根据虚拟内存地址通过页表找到对应的物理内存地址，这些迁移之后的物理页，虽然物理内存地址发生变化，但是内核通过修改相应页表中虚拟内存地址与物理内存地址之间的映射关系，可以保证虚拟内存地址不会改变。
 
-![image.png](从 CPU 角度看物理内存模型.assets/6a7bb7d369e2155b01473d91d9ccf6d0.png) 
+![image.png](从CPU角度看物理内存模型.assets/6a7bb7d369e2155b01473d91d9ccf6d0.png) 
 
 但是在内核态的虚拟地址空间中，有一段直接映射区，在这段虚拟内存区域中虚拟地址与物理地址是直接映射的关系，虚拟内存地址直接减去一个固定的偏移量（0xC000 0000 ） 就得到了物理内存地址。
 
